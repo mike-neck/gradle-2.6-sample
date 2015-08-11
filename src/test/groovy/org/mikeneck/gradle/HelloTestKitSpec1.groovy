@@ -17,11 +17,11 @@ package org.mikeneck.gradle
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import org.gradle.testkit.runner.TaskOutcome
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
-import java.nio.file.Path
 import java.nio.file.Paths
 
 class HelloTestKitSpec1 extends Specification {
@@ -41,7 +41,6 @@ class HelloTestKitSpec1 extends Specification {
 ${loadScript()}
 ${loader.getResource('test-scripts/test1.gradle').text}
 /$
-        println script
     }
 
     String loadScript() {
@@ -73,7 +72,7 @@ assert project.class.classLoader.getResource('META-INF/gradle-plugins/hello.prop
         }
     }
 
-    def 'helloTestKit creates build/test/test.txt'() {
+    def 'model shows model information'() {
         given:
         buildFile << script
 
@@ -84,11 +83,27 @@ assert project.class.classLoader.getResource('META-INF/gradle-plugins/hello.prop
                 .build()
 
         then:
-        result.standardOutput.contains('hello')
-//        result.task(HelloTestKit.TASK_NAME).outcome == TaskOutcome.SUCCESS
-//        projectDir.newFile('build/test/test.txt').text.contains($/Hello Gradle Test Kit
-//Hello Gradle Test Kit
-//Hello Gradle Test Kit
-///$)
+        result.standardOutput.contains('+ hello')
+    }
+
+    def 'helloTestKit creates build/test/test.txt'() {
+        given:
+        buildFile << script
+
+        when:
+        def result = GradleRunner.create()
+                .withProjectDir(projectDir.root)
+                .withArguments(HelloTestKit.TASK_NAME, '--debug')
+                .build()
+
+        then:
+        result.task(":${HelloTestKit.TASK_NAME}").outcome == TaskOutcome.SUCCESS
+        def buildDir = new File(projectDir.root, 'build')
+        def testDir = new File(buildDir, 'test')
+        def outputFile = new File(testDir, 'test.txt')
+        outputFile.text.contains($/Hello Gradle Test Kit
+Hello Gradle Test Kit
+Hello Gradle Test Kit
+/$)
     }
 }

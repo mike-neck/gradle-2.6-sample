@@ -20,6 +20,8 @@ import org.gradle.api.Task
 import org.gradle.model.*
 import org.mikeneck.gradle.model.Hello
 
+import java.nio.file.Files
+
 class HelloTestKit extends RuleSource {
 
     static final String TASK_NAME = 'helloTestKit'
@@ -47,7 +49,7 @@ class HelloTestKit extends RuleSource {
             Project pj = project
             group = 'Hello Test Kit'
             description = 'Sample task for Gradle Test Kit'
-            def dir = pj.file("${pj.buildDir}/${hello.dirName}")
+            def dir = new File(pj.buildDir, hello.dirName)
             def file = pj.file("${dir}/${hello.fileName}")
             def w = new StringWriter()
             hello.contents.each {c ->
@@ -55,7 +57,11 @@ class HelloTestKit extends RuleSource {
                     w << "${c.line}\n"
                 }
             }
+            outputs.file file
             doLast {
+                if (!Files.exists(dir.toPath())) {
+                    Files.createDirectories(dir.toPath())
+                }
                 file.write(w.toString(), 'UTF-8')
             }
         }
