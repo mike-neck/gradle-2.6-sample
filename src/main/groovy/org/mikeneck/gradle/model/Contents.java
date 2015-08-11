@@ -15,6 +15,9 @@
  */
 package org.mikeneck.gradle.model;
 
+import org.gradle.model.Managed;
+
+@Managed
 public interface Contents {
 
     String getLine();

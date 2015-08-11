@@ -21,6 +21,9 @@ import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
+import java.nio.file.Path
+import java.nio.file.Paths
+
 class HelloTestKitSpec1 extends Specification {
 
     @Rule
@@ -34,11 +37,45 @@ class HelloTestKitSpec1 extends Specification {
 
     def setup() {
         buildFile = projectDir.newFile('build.gradle')
+        script = $/
+${loadScript()}
+${loader.getResource('test-scripts/test1.gradle').text}
+/$
+        println script
+    }
+
+    String loadScript() {
+        def pluginClassUrl = HelloTestKit.class.protectionDomain.codeSource.location
+        def path = Paths.get(pluginClassUrl.toURI())
+        if (pluginClassUrl.protocol == 'file' && "${pluginClassUrl}".endsWith('.jar')) {
+            return """buildscript {
+    dependencies {
+        classpath file('${path}')
+    }
+}
+"""
+        } else {
+            def granpa = path.parent.parent
+            def runOnIdea = granpa.endsWith('out')
+            def resPath = runOnIdea ?
+                    path :
+                    granpa.resolve('resources/main')
+            def urls = ([path, resPath] as Set).collect {
+                it.toUri().toURL()
+            }.collect {
+                "new URL('${it}')"
+            }.join(', ')
+            return """[$urls].each {
+    project.class.classLoader.addURL(it)
+}
+assert project.class.classLoader.getResource('META-INF/gradle-plugins/hello.properties') != null
+"""
+        }
     }
 
     def 'helloTestKit creates build/test/test.txt'() {
         given:
-        buildFile << loader.getResource('test-scripts/test1.gradle').text
+        buildFile << script
 
         when:
         BuildResult result = GradleRunner.create()

@@ -25,19 +25,13 @@ class HelloTestKit extends RuleSource {
     static final String TASK_NAME = 'helloTestKit'
 
     @Model
-    static void hello(Hello hello) {}
-
-    @Defaults
-    static void defaultRepeat(Hello hello) {
+    static void hello(Hello hello) {
         hello.dirName = 'hello'
         hello.fileName = 'hello.txt'
-        hello.contents.each {
-            it.repeat = 1
-        }
     }
 
-    @Validate
-    static void validateModel(Hello hello) {
+    @Mutate
+    void createTask(ModelMap<Task> tasks, Hello hello) {
         if (hello.dirName == null || hello.dirName.isEmpty()) {
             throw new IllegalConfigurationException('dirName should be not null and not empty.')
         }
@@ -49,10 +43,6 @@ class HelloTestKit extends RuleSource {
                 throw new IllegalConfigurationException('repeat should be larger than or equals to 1.')
             }
         }
-    }
-
-    @Mutate
-    void createTask(ModelMap<Task> tasks, Hello hello) {
         tasks.create(TASK_NAME) {
             Project pj = project
             group = 'Hello Test Kit'
